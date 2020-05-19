@@ -1,0 +1,8 @@
+---
+- include: dockerfile.yml
+- include: prerequisites.yml
+- include: influxdb.yml
+- include: chronograf.yml
+- include: telegraf.yml
+- include: kapacitor.yml
+- include: deploy.yml

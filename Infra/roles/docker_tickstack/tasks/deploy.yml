@@ -1,0 +1,10 @@
+---
+- name: Deploy stack from a compose file
+  become: true
+  docker_stack:
+   state: present
+   name: mystack
+   compose:
+     #- "{{ role_path }}/files/docker-compose.yml"
+     - /home/aarabb_a/influxdata/docker-compose.yml
+  when: "'managers' in group_names"

@@ -1,0 +1,8 @@
+---
+- name: ALL - Install Docker
+  become: true
+  package:
+    name: "{{ docker_package }}"
+    state: "{{ docker_package_state }}"
+    force_apt_get: yes
+  notify: restart Docker

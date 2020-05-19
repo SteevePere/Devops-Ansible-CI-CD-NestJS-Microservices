@@ -1,0 +1,71 @@
+version: '3.7'
+
+services:
+  influxdb:
+    image: 172.16.229.12:5000/myinfluxdb
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb/
+    networks:
+      - my-attachable-web
+    environment:
+      - INFLUXDB_HTTP_ENABLED=true
+      - INFLUXDB_HTTP_AUTH_ENABLED=false
+    ports:
+      - "8086:8086"
+    deploy:
+      placement:
+        constraints:
+          - "node.role == manager"
+  chronograf:
+    image: 172.16.229.12:5000/mychronograf
+    volumes:
+      - ./data/chronograf:/var/lib/chronograf/
+    networks:
+      - my-attachable-web
+    environment:
+      INFLUXDB_URL: http://influxdb:8086
+      KAPACITOR_URL: http://kapacitor:9092
+    ports:
+      - "8888:8888"
+    deploy:
+      placement:
+        constraints:
+          - "node.role == manager"
+    links:
+      - influxdb
+      - kapacitor
+  kapacitor:
+    image:  172.16.229.12:5000/mykapacitor
+    volumes:
+      - ./data/kapacitor:/var/lib/kapacitor/
+     # - ./kapacitor/config/:/etc/kapacitor/
+    networks:
+      - my-attachable-web
+    environment:
+      KAPACITOR_HOSTNAME: kapacitor
+      KAPACITOR_INFLUXDB_0_URLS_0: http://influxdb:8086
+    deploy:
+      placement:
+        constraints:
+          - "node.role == manager"
+    links:
+      - influxdb
+    ports:
+      - "9093:9093"
+  telegraf:
+    image:  172.16.229.12:5000/mytelegraf
+    volumes:
+     # - ./data/telegraf:/etc/telegraf/
+     # - ./telegraf:/etc/telegraf/
+      - ./etc/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - my-attachable-web
+    deploy:
+      mode: global
+
+
+networks:
+  my-attachable-web:
+          driver: overlay
+

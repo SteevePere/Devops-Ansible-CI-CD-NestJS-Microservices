@@ -1,0 +1,30 @@
+---
+- name: MANAGER - Install pip
+  become: true
+  apt:
+    name: python3-pip
+    state: latest
+    force_apt_get: yes
+  when: "'managers' in group_names"
+
+- name: MANAGER - Install pip-docker
+  become: true
+  pip:
+    name: docker
+    state: present
+  when: "'managers' in group_names"
+
+- name: MANAGER - Pull registry image
+  become: true
+  when: "'managers' in group_names"
+  docker_image:
+    source: pull
+    name: registry
+    state: present
+    tag: latest
+
+- name: MANAGER - Ensure registry is running
+  become: true
+  when: "'managers' in group_names"
+  shell: docker service ls --filter name=registry | grep '\sregistry\s' | awk '{ print $1 }'
+  register: registry_running

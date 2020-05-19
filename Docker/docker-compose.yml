@@ -1,0 +1,134 @@
+version: "3.7"
+
+services:
+  traefik:
+    image: "172.16.229.12:5000/my_booking_service/traefik:latest"
+    ports:
+      - 80:80
+      - 8093:8080
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - traefik-public
+    deploy:
+      labels:
+        - traefik.enable=false
+      placement:
+        constraints:
+          - node.role == manager
+
+  database_booking_service:
+    image: 172.16.229.12:5000/my_booking_service/db:latest
+    environment:
+      MYSQL_DATABASE: booking
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - traefik-public
+    deploy:
+      labels:
+        - traefik.enable=false
+
+  users_api_service:
+    image: 172.16.229.12:5000/my_booking_service/users:latest
+    depends_on:
+      - database_booking_service
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.users_api_service.rule=PathPrefix(`/services/users/`)
+        - traefik.http.routers.users_api_service.middlewares=strip-prefix-services@file
+        - traefik.http.services.users_api_service.loadbalancer.server.port=3000
+    networks:
+      - traefik-public
+
+  bookings_api_service:
+    image: 172.16.229.12:5000/my_booking_service/bookings:latest
+    depends_on:
+      - database_booking_service
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.bookings_api_service.rule=PathPrefix(`/services/bookings/`)
+        - traefik.http.routers.bookings_api_service.middlewares=strip-prefix-services@file
+        - traefik.http.services.bookings_api_service.loadbalancer.server.port=3000
+    networks:
+      - traefik-public
+
+  property_api_service:
+    image: 172.16.229.12:5000/my_booking_service/property:latest
+    depends_on:
+      - database_booking_service
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.property_api_service.rule=PathPrefix(`/services/property/`)
+        - traefik.http.routers.property_api_service.middlewares=strip-prefix-services@file
+        - traefik.http.services.property_api_service.loadbalancer.server.port=3000
+    networks:
+      - traefik-public
+
+
+  mail_api_service:
+    image: 172.16.229.12:5000/my_booking_service/mail:latest
+    depends_on:
+      - database_booking_service
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.mail_api_service.rule=PathPrefix(`/services/mail/`)
+        - traefik.http.routers.mail_api_service.middlewares=strip-prefix-services@file
+        - traefik.http.services.mail_api_service.loadbalancer.server.port=3000
+    networks:
+      - traefik-public
+
+  influxdb:
+    image: influxdb:latest
+    environment:
+      - INFLUXDB_HTTP_ENABLED=true
+      - INFLUXDB_HTTP_AUTH_ENABLED=false
+      - INFLUXDB_DB=db
+      - INFLUXDB_USER=john
+      - INFLUXDB_USER_PASSWORD=secret
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.influxdb.rule=PathPrefix(`/influxdb/`)
+        - traefik.http.routers.influxdb.middlewares=strip-prefix-services@file
+        - traefik.http.services.influxdb.loadbalancer.server.port=8086
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+        - traefik-public
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - QUERY_BASE_PATH=/jaeger
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.jaeger.rule=PathPrefix(`/jaeger/`)
+        - traefik.http.services.jaeger.loadbalancer.server.port=16686
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    external: true

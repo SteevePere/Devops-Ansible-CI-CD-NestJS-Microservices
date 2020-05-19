@@ -1,0 +1,22 @@
+---
+- name: Build image influxdb
+  become: true
+  docker_image:
+    build:
+     # path: "{{ role_path }}/files/influxdb"
+     path: /home/aarabb_a/influxdata/influxdb
+    name: myinfluxdb
+    source: build
+  when: "'managers' in group_names"
+
+- name: Tag and push to local registry
+  become: true
+  docker_image:
+    # Image will be myinfluxdb:latest
+    name: myinfluxdb
+    # Will be pushed to 172.16.229.12:5000/myinfluxdb:latest
+    repository: 172.16.229.12:5000/myinfluxdb
+    tag: latest
+    push: yes
+    source: local
+  when: "'managers' in group_names"

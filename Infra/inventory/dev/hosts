@@ -1,0 +1,12 @@
+
+[nodes]
+manager ansible_host=172.16.229.34 ansible_ssh_private_key_file="/home/afaf/.ssh/id_rsa" ansible_port=22 ansible_user=aarabb_a
+worker1 ansible_host=172.16.229.6 ansible_ssh_private_key_file="/home/afaf/.ssh/id_rsa" ansible_port=22 ansible_user=aarabb_a
+worker2 ansible_host=172.16.229.12 ansible_ssh_private_key_file="/home/afaf/.ssh/id_rsa" ansible_port=22 ansible_user=aarabb_a
+
+[managers]
+manager
+
+[workers]
+worker1
+worker2

@@ -1,0 +1,21 @@
+---
+- name: MANAGER - Init swarm
+  become: true
+  when: "'managers' in group_names"
+  docker_swarm:
+    state: present
+    advertise_addr: "{{ hostvars['manager']['ansible_default_ipv4']['address'] }}"
+  register: swarm_init_return
+
+- name: MANAGER - Set join token as fact
+  when: "'managers' in group_names"
+  set_fact: worker_token="{{ swarm_init_return.swarm_facts.JoinTokens.Worker }}"
+
+- name: WORKERS - Make workers join swarm
+  become: true
+  when: "'workers' in group_names"
+  docker_swarm:
+    state: join
+    join_token: "{{ hostvars['manager']['worker_token'] }}"
+    advertise_addr: "{{ hostvars['manager']['ansible_default_ipv4']['address'] }}"
+    remote_addrs: "{{ hostvars['manager']['ansible_default_ipv4']['address'] }}"

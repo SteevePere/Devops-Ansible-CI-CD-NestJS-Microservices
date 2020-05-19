@@ -1,0 +1,22 @@
+---
+- name: Build image kapacitor
+  become: true
+  docker_image:
+    build:
+     #path: "{{ role_path }}/files/kapacitor"
+      path: /home/aarabb_a/influxdata/kapacitor
+    name: mykapacitor
+    source: build
+  when: "'managers' in group_names"
+
+- name: Tag and push to local registry
+  become: true
+  docker_image:
+    # Image will be mykapacitor:latest
+    name: mykapacitor
+    # Will be pushed to 172.16.229.12:5000/mykapacitor:latest
+    repository: 172.16.229.12:5000/mykapacitor
+    tag: latest
+    push: yes
+    source: local
+  when: "'managers' in group_names"

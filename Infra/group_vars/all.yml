@@ -1,0 +1,15 @@
+---
+#python version
+ansible_python_interpreter: "/usr/bin/python3"
+
+# Docker Registry
+docker_registry_port: 5000
+docker_registry_url: "127.0.0.1:{{ docker_registry_port }}"
+
+# Project root directory
+project_root_directory: /root
+
+# Docker volume
+docker_volume_directory_path: "{{ project_root_directory }}"
+docker_volume_directory_name: .docker_volumes
+docker_volume_directory_full: "{{ docker_volume_directory_path }}/{{ docker_volume_directory_name }}"

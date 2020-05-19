@@ -1,0 +1,47 @@
+---
+- name: MANAGER - Check if configuration file already exists
+  become: true
+  when: "'managers' in group_names"
+  stat:
+    path: "/etc/gitlab/gitlab.rb"
+  register: gitlab_config_file
+
+- name: MANAGER - Check if GitLab is already installed
+  become: true
+  when: "'managers' in group_names"
+  stat:
+    path: "/usr/bin/gitlab-ctl"
+  register: gitlab_file
+
+- name: MANAGER - Install dependencies
+  become: true
+  when: "'managers' in group_names"
+  package:
+    name: "{{ item }}"
+    state: present
+    force_apt_get: yes
+  with_items:
+    - openssh-server
+    - postfix
+    - curl
+    - openssl
+
+- name: MANAGER - Download repository
+  become: true
+  get_url:
+    url: "https://packages.gitlab.com/install/repositories/gitlab/{{ gitlab_edition }}/script.deb.sh"
+    dest: "/tmp/gitlab_install_repository.sh"
+    validate_certs: "{{ gitlab_download_validate_certs }}"
+  when: "'managers' in group_names and gitlab_file.stat.exists == false"
+
+- name: MANAGER - Install GitLab repository
+  become: true
+  command: bash /tmp/gitlab_install_repository.sh
+  when: "'managers' in group_names and gitlab_file.stat.exists == false"
+
+- name: MANAGER - Install pyapi-gitlab & request
+  become: true
+  pip:
+    name: ['pyapi-gitlab', 'request']
+    state: present
+  when: "'managers' in group_names"

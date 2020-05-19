@@ -1,0 +1,48 @@
+[entryPoints]
+  [entryPoints.insecure]
+    address = ":80"
+
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  swarmMode = true
+  network = "traefik-public"
+
+[api]
+  dashboard = true
+  debug = true
+  insecure = true
+
+[providers.file]
+  filename = "./services.toml"
+
+[log]
+  filePath = "/var/traefik/debug.log"
+  level="DEBUG"
+
+[accessLog]
+  filePath = "/var/traefik/access.log"
+  format = "json"
+
+  [accessLog.filters]    
+    statusCodes = ["200", "300-302", "404"]
+    retryAttempts = true
+    minDuration = "10ms"
+
+[metrics]
+  [metrics.influxDB]
+    protocol = "http"
+    address = "http://tasks.influxdb:8086"
+    #address = "http://influxdb:8086"
+    database = "db"
+    username = "john"
+    password = "secret"
+    addEntryPointsLabels = true
+    addServicesLabels = true
+    pushinterval = "10s"
+
+[tracing]
+  [tracing.jaeger]
+    samplingServerURL = "http://MBS_jaeger:5778/sampling"
+    localAgentHostPort = "MBS_jaeger:6831"
+  [tracing.jaeger.collector]
+    endpoint = "http://MBS_jaeger:14268/api/traces?format=jaeger.thrift"

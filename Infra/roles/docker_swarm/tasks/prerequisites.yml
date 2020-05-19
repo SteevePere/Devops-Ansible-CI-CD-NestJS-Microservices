@@ -1,0 +1,62 @@
+---
+- name: ALL - Check whether Docker is installed
+  apt:
+    name:
+      - docker
+      - docker-engine
+    state: absent
+    force_apt_get: yes
+
+- name: ALL - Install dependencies
+  become: true
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - gnupg2
+    state: present
+    force_apt_get: yes
+
+- name: ALL - Add Docker apt key
+  become: true
+  apt_key:
+    url: "{{ docker_apt_gpg_key }}"
+    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    state: present
+  register: add_repository_key
+  ignore_errors: "{{ docker_apt_ignore_key_error }}"
+
+- name: ALL - Ensure curl is present
+  apt:
+    name:
+      -curl
+    state: present
+    force_apt_get: yes
+  when: add_repository_key is failed
+
+- name: ALL - Add Docker apt key
+  shell: >
+    curl -sSL {{ docker_apt_gpg_key }} | sudo apt-key add -
+  args:
+    warn: false
+  when: add_repository_key is failed
+
+- name: ALL - Add Docker repository
+  become: true
+  apt_repository:
+    repo: "{{ docker_apt_repository }}"
+    state: present
+    update_cache: true
+
+- name: ALL - Install pip
+  become: true
+  apt:
+    name: python3-pip
+    state: latest
+    force_apt_get: yes
+
+- name: ALL - Install pip-docker
+  become: true
+  pip:
+    name: docker
+    state: present

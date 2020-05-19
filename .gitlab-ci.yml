@@ -1,0 +1,134 @@
+# to build custom base image
+
+# variables:
+#   REGISTRY: 172.16.229.12:5000
+#
+# stages:
+#   - custom-build
+#
+# build:
+#   image: docker:18.09.7
+ #  stage: custom-build
+ #  services:
+ #  - name: docker:18.09.7-dind
+ #    command: ['--insecure-registry=172.16.229.12:5000']
+ #  script:
+ #    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY
+ #    - docker build -t $REGISTRY/mbs/ci Docker/CI/image
+ #    - docker push $REGISTRY/mbs/ci
+
+# -------------------------------------------------------------
+
+# --- variables
+variables:
+  # ---
+  REGISTRY: '172.16.229.12:5000'
+  TEST_IMAGE: 'mbs/ci:latest'
+  MYSQL_VERSION: '5.7'
+  HOST: rachad_a@172.16.229.34
+  STACK_NAME: MBS
+  # ---
+
+# --- default base image
+image: $REGISTRY/$TEST_IMAGE
+
+# --- stages
+stages:
+  - unit test
+  - fonctional test
+  - build
+  - deploy
+
+# --- unit testing
+Running Unit Tests:
+  stage: unit test
+  services:
+    - mysql:$MYSQL_VERSION
+  variables:
+    DATABASE_HOST: mysql
+    MYSQL_DATABASE: booking
+    MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD # GitLab CI env variable
+  script:
+    - mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" --host=${DATABASE_HOST} ${MYSQL_DATABASE} < Data/MySQL/Init/test/booking_test.sql
+    - cd Services/property && npm install && npm run test
+    - rm -rf ./node_modules
+    - cd ../users && npm install && npm run test
+    - rm -rf ./node_modules
+    - cd ../bookings && npm install && npm run test
+    - rm -rf ./node_modules
+    - cd ../mail && npm install && npm run test
+    - rm -rf ./node_modules
+
+Running Fonctional Tests:
+  stage: fonctional test
+  services:
+    - mysql:$MYSQL_VERSION
+  variables:
+    DATABASE_HOST: mysql
+    MYSQL_DATABASE: booking
+    MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD # GitLab CI env variable
+  script:
+    - mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" --host=${DATABASE_HOST} ${MYSQL_DATABASE} < Data/MySQL/Init/production/booking.sql
+    - cd Services/users && npm install && npm run test:e2e
+    - rm -rf ./node_modules
+
+# --- building images
+Building Database:
+  image: docker:18.09.7
+  stage: build
+  only:
+    - master
+  services:
+  - name: docker:18.09.7-dind
+    command: ['--insecure-registry=172.16.229.12:5000']
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY
+    - docker build -t $REGISTRY/my_booking_service/db Data/MySQL/Init/production/
+    - docker push $REGISTRY/my_booking_service/db
+
+Building Traefik:
+  image: docker:18.09.7
+  stage: build
+  only:
+    - master
+  services:
+  - name: docker:18.09.7-dind
+    command: ['--insecure-registry=172.16.229.12:5000']
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY
+    - docker build -t $REGISTRY/my_booking_service/traefik Docker/traefik/
+    - docker push $REGISTRY/my_booking_service/traefik
+
+Building Services:
+  image: docker:18.09.7
+  stage: build
+  only:
+    - master
+  services:
+  - name: docker:18.09.7-dind
+    command: ['--insecure-registry=172.16.229.12:5000']
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY
+    - docker build -t $REGISTRY/my_booking_service/users Services/users/
+    - docker push $REGISTRY/my_booking_service/users
+    - docker build -t $REGISTRY/my_booking_service/bookings Services/bookings/
+    - docker push $REGISTRY/my_booking_service/bookings
+    - docker build -t $REGISTRY/my_booking_service/property Services/property/
+    - docker push $REGISTRY/my_booking_service/property
+    - docker build -t $REGISTRY/my_booking_service/mail Services/mail/
+    - docker push $REGISTRY/my_booking_service/mail
+
+Deploying:
+  stage: deploy
+  only:
+    - master
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - scp Docker/docker-compose.yml $HOST:/home/rachad_a
+  script:
+    - ssh $HOST "docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY"
+    - ssh $HOST "export DATABASE_HOST=database_booking_service && docker stack deploy --compose-file docker-compose.yml $STACK_NAME"

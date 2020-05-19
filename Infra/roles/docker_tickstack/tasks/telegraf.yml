@@ -1,0 +1,22 @@
+---
+- name: Build image telegraf
+  become: true
+  docker_image:
+    build:
+     #path: "{{ role_path }}/files/telegraf"
+      path: /home/aarabb_a/influxdata/telegraf
+    name: mytelegraf
+    source: build
+ # when: "'managers' in group_names"
+
+- name: Tag and push to local registry
+  become: true  
+  docker_image:
+    # Image will be myinfluxdb:latest
+    name: mytelegraf
+    # Will be pushed to 172.16.229.12:5000/mytelegraf:latest
+    repository: 172.16.229.12:5000/mytelegraf
+    tag: latest
+    push: yes
+    source: local
+ # when: "'managers' in group_names"

@@ -1,0 +1,4 @@
+[http]
+  [http.middlewares]
+    [http.middlewares.strip-prefix-services.stripPrefix]
+      prefixes = ["/services/users", "/services/bookings", "/services/property", "/services/mail/", "/metrics", "/influxdb"]

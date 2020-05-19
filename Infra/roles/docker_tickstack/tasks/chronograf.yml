@@ -1,0 +1,22 @@
+---
+- name: Build image chronograf
+  become: true
+  docker_image:
+    build:
+     # path: "{{ role_path }}/files/chronograf"
+     path: /home/aarabb_a/influxdata/chronograf
+    name: mychronograf
+    source: build
+  when: "'managers' in group_names"
+
+- name: Tag and push to local registry
+  become: true
+  docker_image:
+    # Image will be myinfluxdb:latest
+    name: mychronograf
+    # Will be pushed to 172.16.229.12:5000/mychronograf:latest
+    repository: 172.16.229.12:5000/mychronograf
+    tag: latest
+    push: yes
+    source: local
+  when: "'managers' in group_names"

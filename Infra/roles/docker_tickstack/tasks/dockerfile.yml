@@ -1,0 +1,63 @@
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/influxdb
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/chronograf
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/telegraf
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/kapacitor
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/etc
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/data/telegraf
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+
+- name: Copy content dockerfile influxdata to manager
+  copy:
+    src: ../files/influxdata/docker-compose.yml
+    dest: /home/aarabb_a/influxdata/
+    owner: aarabb_a
+    group: aarabb_a
+    mode: 0644
+  when: "'managers' in group_names"
+

@@ -1,0 +1,8 @@
+---
+- hosts: nodes
+
+  roles:
+    - docker_swarm
+    - docker_registry
+    - gitlab
+    - docker_tickstack

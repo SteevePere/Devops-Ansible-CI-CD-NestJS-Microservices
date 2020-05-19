@@ -1,0 +1,7 @@
+---
+- name: MANAGER - Create volume for registry
+  become: true
+  when: "'managers' in group_names and registry_running.stdout == ''"
+  file:
+    path: "{{ docker_volume_directory_full }}/registry"
+    state: directory

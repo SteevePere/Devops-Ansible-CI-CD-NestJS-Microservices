@@ -1,0 +1,8 @@
+---
+- name: MANAGER - Install GitLab
+  become: true
+  package:
+    name: "{{ gitlab_edition }}"
+    state: present
+    force_apt_get: yes
+  when: "'managers' in group_names and gitlab_file.stat.exists == false"
